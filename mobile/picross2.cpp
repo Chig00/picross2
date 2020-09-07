@@ -1,10 +1,13 @@
 #include <iostream>
 #include <random>
 #include <ctime>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // Constants
 //{
+// The current version of the program.
+constexpr int VERSION[] = {1, 2, 0, 0};
+
 #define DIGITS 10
 #define BOARD_SIZE 9
 #define MAX_HINT (BOARD_SIZE + (BOARD_SIZE % 2)) / 2
@@ -845,14 +848,12 @@ class Timer {
 		 */
 		void start() {
 			start_ = get_time();
+			now = -1;
 		}
 		
 		/* Blits the timer to the surface
 		 */
 		void blit(SDL_Surface* surface) {
-			// The time elapsed since the start is obtained
-			int now = get_time() - start_;
-			
 			// The time is split into minutes and seconds
 			int minutes = now / 60;
 			int seconds = now % 60;
@@ -875,10 +876,28 @@ class Timer {
 			}
 		}
 		
+		/* Updates the current time.
+		   Returns true if the time changed.
+		 */
+		bool update() {
+			// The time elapsed since the start is obtained
+			int now_ = get_time() - start_;
+			
+			// If the time changed, the time is updated and true is returned.
+			if (now < now_) {
+				now = now_;
+				return true;
+			}
+			
+			// Else, false is returned.
+			return false;
+		}
+		
 	private:
 		Surface* colon; // The separator of the minutes and seconds
 		Surface* numbers[DIGITS]; // The digits 0 - 9
-		double start_;
+		double start_; // The time that the timer was started at.
+		int now; // The current time (in seconds rounded down).
 };
 
 /* Class for the hint counter
@@ -1010,7 +1029,6 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 					hint_counter++;
 				}
 				
-				
 				// Else, if the player requested the solution, the solution is displayed
 				else if (solve.in_rect(&mouse)) {
 					board.solve();
@@ -1031,6 +1049,18 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				else {
 					board.click_check(&mouse, true);
 				}
+				
+				background->blit(display->get_surface());
+				board.blit_board(display->get_surface());
+				timer.blit(display->get_surface());
+				hint_counter.blit(display->get_surface());
+				hint.blit(display->get_surface());
+				solve.blit(display->get_surface());
+				quit.blit(display->get_surface());
+				new_.blit(display->get_surface());
+				reset.blit(display->get_surface());
+				hints.blit(display->get_surface());
+				time_.blit(display->get_surface());
 			}
 			
 			// The right click is also checked
@@ -1042,20 +1072,34 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				
 				// The click is checked for whether it is on the board or not
 				board.click_check(&mouse, false);
+				
+				background->blit(display->get_surface());
+				board.blit_board(display->get_surface());
+				timer.blit(display->get_surface());
+				hint_counter.blit(display->get_surface());
+				hint.blit(display->get_surface());
+				solve.blit(display->get_surface());
+				quit.blit(display->get_surface());
+				new_.blit(display->get_surface());
+				reset.blit(display->get_surface());
+				hints.blit(display->get_surface());
+				time_.blit(display->get_surface());
 			}
 			
 			// The surfaces are blitted
-			background->blit(display->get_surface());
-			board.blit_board(display->get_surface());
-			timer.blit(display->get_surface());
-			hint_counter.blit(display->get_surface());
-			hint.blit(display->get_surface());
-			solve.blit(display->get_surface());
-			quit.blit(display->get_surface());
-			new_.blit(display->get_surface());
-			reset.blit(display->get_surface());
-			hints.blit(display->get_surface());
-			time_.blit(display->get_surface());
+			else if (timer.update()) {
+				background->blit(display->get_surface());
+				board.blit_board(display->get_surface());
+				timer.blit(display->get_surface());
+				hint_counter.blit(display->get_surface());
+				hint.blit(display->get_surface());
+				solve.blit(display->get_surface());
+				quit.blit(display->get_surface());
+				new_.blit(display->get_surface());
+				reset.blit(display->get_surface());
+				hints.blit(display->get_surface());
+				time_.blit(display->get_surface());
+			}
 			
 			// The window's surface is updated
 			display->update();
@@ -1253,3 +1297,12 @@ int main(int argc, char* argv[]) {
 	
 	return 0;
 }
+
+/* CHANGELOG:
+	 v1:
+	   Release.
+	 v1.1:
+	   Left click and right click now cycle through cell states rather than setting them.
+	 v1.2:
+	   The display is only rendered to after a click or after a seocnd passes.
+ */
