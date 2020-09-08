@@ -6,7 +6,7 @@
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[] = {1, 2, 0, 0};
+constexpr int VERSION[] = {1, 2, 0, 1};
 
 #define DIGITS 10
 #define BOARD_SIZE 9
@@ -1050,6 +1050,7 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 					board.click_check(&mouse, true);
 				}
 				
+				// The display is updated after a click.
 				background->blit(display->get_surface());
 				board.blit_board(display->get_surface());
 				timer.blit(display->get_surface());
@@ -1061,6 +1062,7 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				reset.blit(display->get_surface());
 				hints.blit(display->get_surface());
 				time_.blit(display->get_surface());
+				display->update();
 			}
 			
 			// The right click is also checked
@@ -1073,6 +1075,7 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				// The click is checked for whether it is on the board or not
 				board.click_check(&mouse, false);
 				
+				// The display is updated after a click.
 				background->blit(display->get_surface());
 				board.blit_board(display->get_surface());
 				timer.blit(display->get_surface());
@@ -1084,9 +1087,10 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				reset.blit(display->get_surface());
 				hints.blit(display->get_surface());
 				time_.blit(display->get_surface());
+				display->update();
 			}
 			
-			// The surfaces are blitted
+			// The display is updated, if the timer was updated.
 			else if (timer.update()) {
 				background->blit(display->get_surface());
 				board.blit_board(display->get_surface());
@@ -1099,10 +1103,8 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				reset.blit(display->get_surface());
 				hints.blit(display->get_surface());
 				time_.blit(display->get_surface());
+				display->update();
 			}
-			
-			// The window's surface is updated
-			display->update();
 			
 			// Events are updated
 			SDL_PumpEvents();
@@ -1305,4 +1307,6 @@ int main(int argc, char* argv[]) {
 	   Left click and right click now cycle through cell states rather than setting them.
 	 v1.2:
 	   The display is only rendered to after a click or after a seocnd passes.
+	 v1.2.0.1:
+	   The display update is now paired with the rendering.
  */
