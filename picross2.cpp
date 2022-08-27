@@ -1,38 +1,44 @@
 #include <iostream>
-#include <random>
-#include <ctime>
-#include <SDL.h>
+#include "sdlandnet.hpp"
 
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[] = {1, 2, 0, 1};
-
-#define DIGITS 10
-#define BOARD_SIZE 9
-#define MAX_HINT (BOARD_SIZE + (BOARD_SIZE % 2)) / 2
+constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 0};
 
 // Window title
-const char* const TITLE = "Picross 2 by Chigozie Agomo";
+constexpr const char* TITLE = "Picross 2 by Chigozie Agomo";
+
+// Numerical Constants
+//{
+constexpr int DIGITS = 10;
+constexpr int BOARD_SIZE = 9;
+constexpr int MAX_HINT = (BOARD_SIZE + (BOARD_SIZE % 2)) / 2;
+constexpr int EMPTY = 0;
+constexpr int FILLED = 1;
+constexpr int MARKED = -1;
+constexpr int MAX_TIME = 100;
+//}
 
 // Image locations
-const char* const BACKGROUND_IMAGE = "data/background.bmp";
-const char* const TITLE_IMAGE = "data/title.bmp";
-const char* const PLAY_IMAGE = "data/play.bmp";
-const char* const HELP_IMAGE = "data/help.bmp";
-const char* const HELP_SCREEN_IMAGE = "data/helpscreen.bmp";
-const char* const BLANK_SQUARE_IMAGE = "data/blanksquare.bmp";
-const char* const FILLED_SQUARE_IMAGE = "data/filledsquare.bmp";
-const char* const MARKED_SQUARE_IMAGE = "data/markedsquare.bmp";
-const char* const QUIT_IMAGE = "data/quit.bmp";
-const char* const HINT_IMAGE = "data/hint.bmp";
-const char* const SOLVE_IMAGE = "data/solve.bmp";
-const char* const NEW_IMAGE = "data/new.bmp";
-const char* const RESET_IMAGE = "data/reset.bmp";
-const char* const TIME_IMAGE = "data/time.bmp";
-const char* const HINTS_IMAGE = "data/hints.bmp";
-const char* const COLON_IMAGE = "data/colon.bmp";
-const char* const NUMBER_IMAGES[DIGITS] = {
+//{
+constexpr const char* BACKGROUND_IMAGE = "data/background.bmp";
+constexpr const char* TITLE_IMAGE = "data/title.bmp";
+constexpr const char* PLAY_IMAGE = "data/play.bmp";
+constexpr const char* HELP_IMAGE = "data/help.bmp";
+constexpr const char* HELP_SCREEN_IMAGE = "data/helpscreen.bmp";
+constexpr const char* BLANK_SQUARE_IMAGE = "data/blanksquare.bmp";
+constexpr const char* FILLED_SQUARE_IMAGE = "data/filledsquare.bmp";
+constexpr const char* MARKED_SQUARE_IMAGE = "data/markedsquare.bmp";
+constexpr const char* QUIT_IMAGE = "data/quit.bmp";
+constexpr const char* HINT_IMAGE = "data/hint.bmp";
+constexpr const char* SOLVE_IMAGE = "data/solve.bmp";
+constexpr const char* NEW_IMAGE = "data/new.bmp";
+constexpr const char* RESET_IMAGE = "data/reset.bmp";
+constexpr const char* TIME_IMAGE = "data/time.bmp";
+constexpr const char* HINTS_IMAGE = "data/hints.bmp";
+constexpr const char* COLON_IMAGE = "data/colon.bmp";
+constexpr const char* NUMBER_IMAGES[DIGITS] = {
 	"data/0.bmp",
 	"data/1.bmp",
 	"data/2.bmp",
@@ -44,7 +50,7 @@ const char* const NUMBER_IMAGES[DIGITS] = {
 	"data/8.bmp",
 	"data/9.bmp"
 };
-const char* const NUMBER_SQUARE_IMAGES[DIGITS] = {
+constexpr const char* NUMBER_SQUARE_IMAGES[DIGITS] = {
 	"data/0square.bmp",
 	"data/1square.bmp",
 	"data/2square.bmp",
@@ -56,367 +62,103 @@ const char* const NUMBER_SQUARE_IMAGES[DIGITS] = {
 	"data/8square.bmp",
 	"data/9square.bmp"
 };
-
-// Sprite size ratio constants
-const double BUTTON_X = 0.9;
-const double BUTTON_WIDTH = 0.1;
-const double BUTTON_HEIGHT = 0.075;
-const double TITLE_X = 0.5;
-const double TITLE_Y = 0.2;
-const double TITLE_WIDTH = 0.75;
-const double TITLE_HEIGHT = 0.3;
-const double PLAY_X = 0.5;
-const double PLAY_Y = 0.65;
-const double PLAY_WIDTH = 0.2;
-const double PLAY_HEIGHT = 0.15;
-const double HELP_X = 0.5;
-const double HELP_Y = 0.85;
-const double HELP_WIDTH = 0.2;
-const double HELP_HEIGHT = 0.15;
-const double QUIT_X = 0.925;
-const double QUIT_Y = 0.925;
-const double HELP_SCREEN_X = 0.5;
-const double HELP_SCREEN_Y = 0.5;
-const double HELP_SCREEN_WIDTH = 0.9;
-const double HELP_SCREEN_HEIGHT = 0.8;
-const double GRID_X = 0.325;
-const double GRID_Y = 0.5;
-const double GRID_WIDTH = 0.6;
-const double GRID_HEIGHT = 0.95;
-#define SQUARE_WIDTH GRID_WIDTH / (BOARD_SIZE + MAX_HINT)
-#define SQUARE_HEIGHT GRID_HEIGHT / (BOARD_SIZE + MAX_HINT)
-const double NEW_Y = 0.5;
-const double RESET_Y = 0.6;
-const double HINT_Y = 0.7;
-const double SOLVE_Y = 0.8;
-const double QUIT2_Y = 0.9;
-#define TIME_X BUTTON_X
-const double TIME_Y = 0.1;
-#define TIME_WIDTH BUTTON_WIDTH
-#define TIME_HEIGHT BUTTON_HEIGHT
-#define COLON_X TIME_X
-const double COLON_Y = 0.2;
-const double COLON_WIDTH = 0.02;
-#define COLON_HEIGHT TIME_HEIGHT
-const double NUMBER_WIDTH = 0.04;
-#define NUMBER_HEIGHT COLON_HEIGHT
-#define HINTS_X TIME_X
-const double HINTS_Y = 0.3;
-#define HINTS_WIDTH TIME_WIDTH
-#define HINTS_HEIGHT TIME_HEIGHT
-#define MINUTE_X2 COLON_X - COLON_WIDTH / 2 - NUMBER_WIDTH / 2
-#define MINUTE_X1 MINUTE_X2 - NUMBER_WIDTH
-#define SECOND_X1 COLON_X + COLON_WIDTH / 2 + NUMBER_WIDTH / 2
-#define SECOND_X2 SECOND_X1 + NUMBER_WIDTH
-const double HINT_COUNT_Y = 0.4;
-#define TEN_X HINTS_X - NUMBER_WIDTH / 2
-#define UNIT_X HINTS_X + NUMBER_WIDTH / 2
-
-// Song location
-const char* const SONG = "data/song.wav";
-
-// Song length lower bound (for requeuing)
-const int SONG_LENGTH = 56;
-
-// Other constants
-const int BACKGROUND_COLOUR[3] = {0x0, 0x0, 0x0};
-
-const int SURFACE_DEPTH = 32;
-
-const Uint32 SURFACE_MASKS[2][4] = {
-	{
-		0xff000000,
-		0x00ff0000,
-		0x0000ff00,
-		0x000000ff
-	},
-	{
-		0x000000ff,
-		0x0000ff00,
-		0x00ff0000,
-		0xff000000
-	}
-};
-
-const int LEFT_CLICK = SDL_BUTTON(SDL_BUTTON_LEFT);
-const int RIGHT_CLICK = SDL_BUTTON(SDL_BUTTON_RIGHT);
 //}
 
-/* Gives a relative time in seconds
- */
-double get_time() {
-	return (double) clock() / CLOCKS_PER_SEC;
-}
+// Sprite size ratio constants
+//{
+constexpr double BUTTON_X = 0.9;
+constexpr double BUTTON_WIDTH = 0.1;
+constexpr double BUTTON_HEIGHT = 0.075;
+constexpr double TITLE_X = 0.5;
+constexpr double TITLE_Y = 0.2;
+constexpr double TITLE_WIDTH = 0.75;
+constexpr double TITLE_HEIGHT = 0.3;
+constexpr double PLAY_X = 0.5;
+constexpr double PLAY_Y = 0.65;
+constexpr double PLAY_WIDTH = 0.2;
+constexpr double PLAY_HEIGHT = 0.15;
+constexpr double HELP_X = 0.5;
+constexpr double HELP_Y = 0.85;
+constexpr double HELP_WIDTH = 0.2;
+constexpr double HELP_HEIGHT = 0.15;
+constexpr double QUIT_X = 0.925;
+constexpr double QUIT_Y = 0.925;
+constexpr double HELP_SCREEN_X = 0.5;
+constexpr double HELP_SCREEN_Y = 0.5;
+constexpr double HELP_SCREEN_WIDTH = 0.9;
+constexpr double HELP_SCREEN_HEIGHT = 0.8;
+constexpr double GRID_X = 0.325;
+constexpr double GRID_Y = 0.5;
+constexpr double GRID_WIDTH = 0.6;
+constexpr double GRID_HEIGHT = 0.95;
+constexpr double SQUARE_WIDTH = GRID_WIDTH / (BOARD_SIZE + MAX_HINT);
+constexpr double SQUARE_HEIGHT = GRID_HEIGHT / (BOARD_SIZE + MAX_HINT);
+constexpr double NEW_Y = 0.5;
+constexpr double RESET_Y = 0.6;
+constexpr double HINT_Y = 0.7;
+constexpr double SOLVE_Y = 0.8;
+constexpr double QUIT2_Y = 0.9;
+constexpr double TIME_X = BUTTON_X;
+constexpr double TIME_Y = 0.1;
+constexpr double TIME_WIDTH =  BUTTON_WIDTH;
+constexpr double TIME_HEIGHT = BUTTON_HEIGHT;
+constexpr double COLON_X = TIME_X;
+constexpr double COLON_Y = 0.2;
+constexpr double COLON_WIDTH = 0.02;
+constexpr double COLON_HEIGHT = TIME_HEIGHT;
+constexpr double NUMBER_WIDTH = 0.04;
+constexpr double NUMBER_HEIGHT = COLON_HEIGHT;
+constexpr double HINTS_X = TIME_X;
+constexpr double HINTS_Y = 0.3;
+constexpr double HINTS_WIDTH = TIME_WIDTH;
+constexpr double HINTS_HEIGHT = TIME_HEIGHT;
+constexpr double MINUTE_X2 = COLON_X - COLON_WIDTH / 2 - NUMBER_WIDTH / 2;
+constexpr double MINUTE_X1 = MINUTE_X2 - NUMBER_WIDTH;
+constexpr double SECOND_X1 = COLON_X + COLON_WIDTH / 2 + NUMBER_WIDTH / 2;
+constexpr double SECOND_X2 = SECOND_X1 + NUMBER_WIDTH;
+constexpr double HINT_COUNT_Y = 0.4;
+constexpr double TEN_X = HINTS_X - NUMBER_WIDTH / 2;
+constexpr double UNIT_X = HINTS_X + NUMBER_WIDTH / 2;
+//}
 
-/* A wrapper class for the window and its surface
- */
-class Display {
-	public:
-		/* Sets the display mode (display's height and width)
-		   Creates a window and stores its surface
-		 */
-		Display() {
-			SDL_GetDesktopDisplayMode(0, &display_mode);
-			
-			window = SDL_CreateWindow(
-				TITLE, 0, 0,
-				display_mode.w, display_mode.h, SDL_WINDOW_SHOWN
-			);
-			
-			window_surface = SDL_GetWindowSurface(window);
-		}
-		
-		/* Destroys the window
-		 */
-		~Display() {
-			SDL_DestroyWindow(window);
-		}
-		
-		/* Returns the width of the window
-		 */
-		int get_width() {
-			return window_surface->w;
-		}
-		
-		/* Returns the height of the window
-		 */
-		int get_height() {
-			return window_surface->h;
-		}
-		
-		/* Updates the window's surface
-		 */
-		void update() {
-			SDL_UpdateWindowSurface(window);
-		}
-		
-		/* Returns the window's surface
-		 */
-		SDL_Surface* get_surface() {
-			return window_surface;
-		}
-			
-	private:
-		SDL_DisplayMode display_mode; // Display dimensions
-		SDL_Window* window; // The window
-		SDL_Surface* window_surface; // The window's surface
-};
+// Song location
+constexpr const char* SONG = "data/song.wav";
 
-/* A wrapper class for surfaces
- */
-class Surface {
-	public:
-		/* Loads the surface and fits it to the given dimenions
-		   Initialises a rectangle for the surface
-		 */
-		Surface(const char* source, int x, int y, int width, int height) {
-			SDL_Surface* raw_surface = SDL_LoadBMP(source);
-			
-			surface = SDL_CreateRGBSurface(
-				0, width, height, SURFACE_DEPTH,
-				SURFACE_MASKS[byte_order][0], SURFACE_MASKS[byte_order][1],
-				SURFACE_MASKS[byte_order][2], SURFACE_MASKS[byte_order][3]
-			);
-			
-			SDL_BlitScaled(raw_surface, NULL, surface, NULL);
-			SDL_FreeSurface(raw_surface);
-			
-			rect.x = x;
-			rect.y = y;
-			rect.w = width;
-			rect.h = height;
-		}
-		
-		/* Alternative constructor for use with ratios
-		   Takes in the display's width and height in addition to the ratios as arguments
-		 */
-		Surface(const char* source, int dw, int dh, double x, double y, double w, double h) {
-			int width = w * dw;
-			int height = h * dh;
-			int rx = x * dw - width / 2;
-			int ry = y * dh - height / 2;
-			
-			SDL_Surface* raw_surface = SDL_LoadBMP(source);
-			
-			surface = SDL_CreateRGBSurface(
-				0, width, height, SURFACE_DEPTH,
-				SURFACE_MASKS[byte_order][0], SURFACE_MASKS[byte_order][1],
-				SURFACE_MASKS[byte_order][2], SURFACE_MASKS[byte_order][3]
-			);
-			
-			SDL_BlitScaled(raw_surface, NULL, surface, NULL);
-			SDL_FreeSurface(raw_surface);
-			
-			rect.x = rx;
-			rect.y = ry;
-			rect.w = width;
-			rect.h = height;
-		}
-		
-		/* Frees the surface associated with the object
-		 */
-		~Surface() {
-			SDL_FreeSurface(surface);
-		}
-		
-		/* Returns true if the point in the surface's rect
-		 */
-		bool in_rect(const SDL_Point* point) {
-			return SDL_PointInRect(point, &rect);
-		}
-		
-		/* Blits the surface to another
-		 */
-		void blit(SDL_Surface* surf) {
-			SDL_BlitSurface(surface, NULL, surf, &rect);
-		}
-		
-		/* Sets the rectangle's co-ordinates and then blits
-		 */
-		void blit(SDL_Surface* surf, double x, double y) {
-			rect.x = x * surf->w - rect.w / 2;
-			rect.y = y * surf->h - rect.h / 2;
-			
-			blit(surf);
-		}
-		
-		/* Sets the rectangle's x co-ordinate and then blits
-		 */
-		void blit_x(SDL_Surface* surf, double x) {
-			rect.x = x * surf->w - rect.w / 2;
-			
-			blit(surf);
-		}
-
-		/* Sets the rectangle's co-ordinates exactly before blitting
-		 */
-		void blit(SDL_Surface* surf, int x, int y) {
-			rect.x = x;
-			rect.y = y;
-			blit(surf);
-		}
-
-	private:
-		static const int byte_order = SDL_BYTEORDER != SDL_BIG_ENDIAN; // Byte ordering
-		SDL_Surface* surface; // Contains the pixel data for blitting
-		SDL_Rect rect; // The rectangle showing the position and size of the surface
-};
-
-/* Class that deals with queuing the music
- */
-class MusicQueuer {
-	public:
-		/* Loads the music, plays it, and stores the time of playing
-		 */
-		MusicQueuer(const char* source, int length) {
-			SDL_LoadWAV(source, &audio_spec, &audio_buffer, &audio_length);
-			audio_device = SDL_OpenAudioDevice(NULL, false, &audio_spec, NULL, 0);
-			SDL_PauseAudioDevice(audio_device, false);
-			SDL_QueueAudio(audio_device, audio_buffer, audio_length);
-			double last_queue = get_time();
-			song_length = length;
-		}
-		
-		/* Closes the audio device and frees the song
-		 */
-		~MusicQueuer() {
-			SDL_CloseAudioDevice(audio_device);
-			SDL_FreeWAV(audio_buffer);
-		}
-		
-		/* Requeues the song if it is time
-		 */
-		void requeue() {
-			if (get_time() > last_queue + song_length) {
-				SDL_QueueAudio(audio_device, audio_buffer, audio_length);
-				last_queue = get_time();
-			}
-		}		
-	
-	private:
-		SDL_AudioSpec audio_spec;
-		Uint8* audio_buffer;
-		Uint32 audio_length;
-		SDL_AudioDeviceID audio_device;
-		double last_queue;
-		int song_length;
-};
+// Song length lower bound (for requeuing)
+constexpr int SONG_LENGTH = 56;
+//}
 
 /* The Picross Board
    Contains the pattern to be found, the player's pattern, and the hints
  */
 class Board {
 	public:
-		/* Initialises the RNG and produces a grid with hints
+		/* Initialises the RNG and produces a grid with hints.
 		 */
-		Board(Display* display) {
-			// RNG initialised
-			generator = new std::mt19937(time(NULL));
-			distribution = new std::uniform_int_distribution<int>(0, 1);
-			distribution2 = new std::uniform_int_distribution<int>(0, BOARD_SIZE * BOARD_SIZE - 1);
-			
+		Board(const Sprite& sprite):
+            generator()
+        {
+			// The puzzle is initialised.
 			new_puzzle();
 			
-			// Surfaces are initialised
-			blank_square = new Surface(
-				BLANK_SQUARE_IMAGE, display->get_width(), display->get_height(),
-				0, 0, SQUARE_WIDTH, SQUARE_HEIGHT
-			);
-			
-			filled_square = new Surface(
-				FILLED_SQUARE_IMAGE, display->get_width(), display->get_height(),
-				0, 0, SQUARE_WIDTH, SQUARE_HEIGHT
-			);
-			
-			marked_square = new Surface(
-				MARKED_SQUARE_IMAGE, display->get_width(), display->get_height(),
-				0, 0, SQUARE_WIDTH, SQUARE_HEIGHT
-			);
-			
-			for (int i = 0; i < DIGITS; i++) {
-				number_squares[i] = new Surface(
-					NUMBER_SQUARE_IMAGES[i], display->get_width(), display->get_height(),
-					0, 0, SQUARE_WIDTH, SQUARE_HEIGHT
-				);
-			}
-			
-			width = GRID_WIDTH * display->get_width();
-			height = GRID_HEIGHT * display->get_height();
-			x = GRID_X * display->get_width() - width / 2;
-			y = GRID_Y * display->get_height() - height / 2;
-			width = SQUARE_WIDTH * display->get_width();
-			height = SQUARE_HEIGHT * display->get_height();
+			// The surfaces are initialised
+            resize(sprite);
 		}
-		
-		/* Frees all dynamically allocated memory associated with the board
-		 */
-		~Board() {
-			delete generator;
-			delete distribution;
-			delete distribution2;
-			delete blank_square;
-			delete filled_square;
-			delete marked_square;
-			
-			for (int i = 0; i < DIGITS; i++) {
-				delete number_squares[i];
-			}
-		}
-		
-		/* Prints the target board to display (including hints)
+				
+		/* Prints the target board to display (including hints).
 		 */
 		void print_target() {
 			std::cout << '\n';
 			
 			// Column hints are printed first
-			for (int i = 0; i < MAX_HINT; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
+			for (int i = 0; i < MAX_HINT; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
 					std::cout << "  ";
 				}
 				
 				std::cout << ' ';
 				
-				for (int j = 0; j < BOARD_SIZE; j++) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					if (columns[j][i]) {
 						std::cout << columns[j][i] << ' ';
 					}
@@ -432,8 +174,8 @@ class Board {
 			std::cout << '\n';
 			
 			// Row hints and the target board are then printed
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
 					if (rows[i][j]) {
 						std::cout << rows[i][j] << ' ';
 					}
@@ -445,7 +187,7 @@ class Board {
 				
 				std::cout << ' ';
 				
-				for (int j = 0; j < BOARD_SIZE; j++) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					std::cout << (target[i][j] ? 'O' : ' ') << ' ';
 				}
 				
@@ -454,33 +196,33 @@ class Board {
 			
 			std::cout << '\n';
 			
-			for (int i = 0; i < MAX_HINT; i++) {
+			for (int i = 0; i < MAX_HINT; ++i) {
 				std::cout << "  ";
 			}
 			
 			std::cout << ' ';
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
 				std::cout << i << ' ';
 			}
 			
 			std::cout << "\n\n";
 		}
 		
-		/* Prints the player's board to display (including hints)
+		/* Prints the player's board to display (including hints).
 		 */
 		void print_board() {
 			std::cout << '\n';
 			
 			// Column hints are printed first
-			for (int i = 0; i < MAX_HINT; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
+			for (int i = 0; i < MAX_HINT; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
 					std::cout << "  ";
 				}
 				
 				std::cout << ' ';
 				
-				for (int j = 0; j < BOARD_SIZE; j++) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					if (columns[j][i]) {
 						std::cout << columns[j][i] << ' ';
 					}
@@ -496,8 +238,8 @@ class Board {
 			std::cout << '\n';
 			
 			// Row hints and the target board are then printed
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
 					if (rows[i][j]) {
 						std::cout << rows[i][j] << ' ';
 					}
@@ -509,7 +251,7 @@ class Board {
 				
 				std::cout << ' ';
 				
-				for (int j = 0; j < BOARD_SIZE; j++) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					std::cout << (board[i][j] ? (board[i][j] > 0 ? 'O' : 'X') : ' ') << ' ';
 				}
 				
@@ -518,34 +260,30 @@ class Board {
 			
 			std::cout << '\n';
 			
-			for (int i = 0; i < MAX_HINT; i++) {
+			for (int i = 0; i < MAX_HINT; ++i) {
 				std::cout << "  ";
 			}
 			
 			std::cout << ' ';
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
 				std::cout << i << ' ';
 			}
 			
 			std::cout << "\n\n";
 		}
 		
-		/* Returns true if the player's board matches the target
+		/* Returns true if the player's board matches the target.
+           A simple equality match is insufficient, as EMPTY and MARKED should match.
 		 */
 		bool solved() {
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0 ; j < BOARD_SIZE; j++) {
-					if (target[i][j]) {
-						if (board[i][j] != 1) {
-							return false;
-						}
-					}
-					
-					else {
-						if (board[i][j] == 1) {
-							return false;
-						}
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0 ; j < BOARD_SIZE; ++j) {
+					if (
+                        target[i][j] == FILLED && board[i][j] != FILLED
+                        || target[i][j] != FILLED && board[i][j] == FILLED
+                    ) {
+                        return false;
 					}
 				}
 			}
@@ -553,30 +291,31 @@ class Board {
 			return true;
 		}
 		
-		/* Fills in the board
-		   Duplicate commands erase the square
+		/* Fills in a cell of the board.
+		   Duplicate commands erase the square.
 		 */
 		void fill(int command, int i, int j) {
 			board[j][i] = board[j][i] == command ? 0 : command;
 		}
 			
-		/* Blits the target to the surface
+		/* Blits the target to the given sprite.
 		 */
-		void blit_target(SDL_Surface* surface) {
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < BOARD_SIZE; j++) {
+		void blit_target(Sprite& sprite) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					switch (board[i][j]) {
-						case 1:
-							filled_square->blit(
-								surface,
+						case FILLED:
+                            sprite.blit(
+                                *filled_square,
 								x + (i + MAX_HINT) * width,
 								y + (j + MAX_HINT) * height
 							);
+                            
 							break;
 							
 						default:
-							blank_square->blit(
-								surface,
+                            sprite.blit(
+                                *blank_square,
 								x + (i + MAX_HINT) * width,
 								y + (j + MAX_HINT) * height
 							);
@@ -584,20 +323,20 @@ class Board {
 				}
 			}
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
-					number_squares[rows[i][j]]->blit(
-						surface,
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
+					sprite.blit(
+						*number_squares[rows[i][j]],
 						x + (i + MAX_HINT) * width,
 						y + j * height
 					);
 				}
 			}
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
-					number_squares[columns[i][j]]->blit(
-						surface,
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
+					sprite.blit(
+						*number_squares[columns[i][j]],
 						x + j * width,
 						y + (i + MAX_HINT) * height
 					);
@@ -605,31 +344,31 @@ class Board {
 			}
 		}
 		
-		/* Blits the board to the surface
+		/* Blits the board to the given sprite.
 		 */
-		void blit_board(SDL_Surface* surface) {
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < BOARD_SIZE; j++) {
+		void blit_board(Sprite& sprite) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					switch (board[i][j]) {
-						case 1:
-							filled_square->blit(
-								surface,
+						case FILLED:
+							sprite.blit(
+								*filled_square,
 								x + (i + MAX_HINT) * width,
 								y + (j + MAX_HINT) * height
 							);
 							break;
 							
-						case -1:
-							marked_square->blit(
-								surface,
+						case MARKED:
+							sprite.blit(
+								*marked_square,
 								x + (i + MAX_HINT) * width,
 								y + (j + MAX_HINT) * height
 							);
 							break;
 							
 						default:
-							blank_square->blit(
-								surface,
+							sprite.blit(
+								*blank_square,
 								x + (i + MAX_HINT) * width,
 								y + (j + MAX_HINT) * height
 							);
@@ -637,20 +376,20 @@ class Board {
 				}
 			}
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
-					number_squares[rows[i][j]]->blit(
-						surface,
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
+					sprite.blit(
+						*number_squares[rows[i][j]],
 						x + (i + MAX_HINT) * width,
 						y + j * height
 					);
 				}
 			}
 			
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
-					number_squares[columns[i][j]]->blit(
-						surface,
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < MAX_HINT; ++j) {
+					sprite.blit(
+						*number_squares[columns[i][j]],
 						x + j * width,
 						y + (i + MAX_HINT) * height
 					);
@@ -658,221 +397,235 @@ class Board {
 			}
 		}
 
-		/* Makes a new puzzle
+		/* Makes a new puzzle.
 		 */
 		void new_puzzle() {
+            // The board, row hints, and column hints are (re)initialised.
+            board = std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE>();
+            rows = std::array<std::array<int, MAX_HINT>, BOARD_SIZE>();
+            columns = std::array<std::array<int, MAX_HINT>, BOARD_SIZE>();
+            
 			// Target board and player board initialised
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < BOARD_SIZE; j++) {
-					target[i][j] = (*distribution)(*generator);
-					board[i][j] = 0;
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
+					target[i][j] = generator.get_int(EMPTY, FILLED);
 				}
 			}
-			
-			//Row and column hints set to zero
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < MAX_HINT; j++) {
-					rows[i][j] = 0;
-					columns[i][j] = 0;
-				}
-			}
-			
-			// Row hints initialised
-			for (int i = 0; i < BOARD_SIZE; i++) {
+            
+			// Row hints initialised.
+			for (int i = 0; i < BOARD_SIZE; ++i) {
 				int position = MAX_HINT - 1;
 				
-				for (int j = BOARD_SIZE - 1; j > -1; j--) {
+				for (int j = BOARD_SIZE - 1; j >= 0; --j) {
 					if (target[i][j]) {
-						rows[i][position]++;
+						++rows[i][position];
 					}
 					
 					else if (rows[i][position]) {
-						position--;
+						--position;
 					}
 				}
 			}
 			
-			// Column hints initialised
-			for (int i = 0; i < BOARD_SIZE; i++) {
+			// Column hints initialised.
+			for (int i = 0; i < BOARD_SIZE; ++i) {
 				int position = MAX_HINT - 1;
 				
-				for (int j = BOARD_SIZE - 1; j > -1; j--) {
+				for (int j = BOARD_SIZE - 1; j >= 0; --j) {
 					if (target[j][i]) {
-						columns[i][position]++;
+						++columns[i][position];
 					}
 					
 					else if (columns[i][position]) {
-						position--;
+						--position;
 					}
 				}
 			}
 		}
 		
-		/* Resets the puzzle
+		/* Resets the puzzle.
 		 */
 		void reset_puzzle() {
 			// Player board initialised
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < BOARD_SIZE; j++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
 					board[i][j] = 0;
 				}
 			}
 		}
 
-		/* Checks if the board was clicked
+		/* Checks if the board was clicked.
+           If it was, the cell's state is cycled.
 		 */
-		void click_check(const SDL_Point* point, bool left_click) {
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0; j < BOARD_SIZE; j++) {
-					SDL_Rect rect = {
-							.x = x + (i + MAX_HINT) * width,
-							.y = y + (j + MAX_HINT) * height,
-							.w = width,
-							.h = height
-					};
+		void click_check(const Point& point, bool left_click, bool act) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0; j < BOARD_SIZE; ++j) {
+					Rectangle rect(
+                        x + (i + MAX_HINT) * width,
+                        y + (j + MAX_HINT) * height,
+                        width,
+                        height
+					);
 					
-					if (SDL_PointInRect(point, &rect)) {
-						int command = left_click ? 1 : -1;
-						board[i][j] += command;
-						
-						if (board[i][j] > 1) {
-							board[i][j] -= 3;
-						}
-						
-						else if (board[i][j] < -1) {
-							board[i][j] += 3;
-						}
+					if (rect.contains(point)) {
+                        if (act && i == x_index && j == y_index) {
+                            int command = left_click ? 1 : -1;
+                            board[i][j] += command;
+                            
+                            if (board[i][j] > FILLED) {
+                                board[i][j] = MARKED;
+                            }
+                            
+                            else if (board[i][j] < MARKED) {
+                                board[i][j] = FILLED;
+                            }
+                        }
+                        
+                        else if (!act) {
+                            x_index = i;
+                            y_index = j;
+                        }
 						
 						return;
 					}
 				}
 			}
+            
+            x_index = -1;
+            y_index = -1;
 		}
 		
-		/* Solves a single sqaure
-		   The square is chosen randomly
+		/* Solves a single sqaure.
+		   The square is chosen randomly.
 		 */
 		void hint() {
-			// The square to be revealed is chosen
-			int index = (*distribution2)(*generator);
-
-			for (int i = 0;; i++) {
-				// The choice loops through the board
-				if (i == BOARD_SIZE) {
-					i = 0;
-				}
-				
-				for (int j = 0 ; j < BOARD_SIZE; j++) {
-					// If the square hasn't been marked correctly and the index
-					//   is zero, then it is solved, else the index is decremented
-					if (target[j][i]) {
-						if (board[j][i] != 1) {
-							if (!index--) {
-								board[j][i] = 1;
-								return;
-							}
-						}
-					}
-					
-					else {
-						if (board[j][i] != -1) {
-							if (!index--) {
-								board[j][i] = -1;
-								return;
-							}
-						}
-					}
-				}
-			}
-		}
+            if (solved()) {
+                return;
+            }
+            
+            // Loop until a square that is incorrect is found.
+            for (
+                // The first square to be checked is chosen at random.
+                int index = generator.get_int(0, BOARD_SIZE * BOARD_SIZE - 1);;
+                index = (index + 1) % (BOARD_SIZE * BOARD_SIZE - 1)
+            ) {
+                int i = index / BOARD_SIZE;
+                int j = index % BOARD_SIZE;
+                
+                if (
+                    target[i][j] == FILLED && board[i][j] != FILLED
+                    || target[i][j] != FILLED && board[i][j] == FILLED
+                ) {
+                    board[i][j] = target[i][j];
+                    return;
+                }
+            }
+        }
 		
-		/* Solves the entire puzzle
+		/* Solves the entire puzzle.
 		 */
 		void solve() {
-			for (int i = 0; i < BOARD_SIZE; i++) {
-				for (int j = 0 ; j < BOARD_SIZE; j++) {
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0 ; j < BOARD_SIZE; ++j) {
 					board[i][j] = target[i][j];
 				}
 			}
 		}
 		
-	private:
-		int target[BOARD_SIZE][BOARD_SIZE]; // The pattern to be found
-		int board[BOARD_SIZE][BOARD_SIZE]; // The player's pattern
-		int rows[BOARD_SIZE][MAX_HINT]; // The row hints
-		int columns[BOARD_SIZE][MAX_HINT]; // The column hints
-		std::mt19937* generator; // RNG
-		std::uniform_int_distribution<int>* distribution; // Uniform distribution
-		std::uniform_int_distribution<int>* distribution2; // Uniform distribution
-		Surface* blank_square;
-		Surface* filled_square;
-		Surface* marked_square;
-		Surface* number_squares[DIGITS];
-		int x; // x co-ordinate of the board's left edge
-		int y; // y co-ordinate of the board's right edge
-		int width; // Width of a board square
-		int height; // Hieght of a board square
-};
-
-/* Class for the game timer
- */
-class Timer {
-	public:
-		/* Initialises the surfaces for the numbers and the colon
-		 */
-		Timer(Display* display) {
-			colon = new Surface(
-				COLON_IMAGE, display->get_width(), display->get_height(),
-				COLON_X, COLON_Y, COLON_WIDTH, COLON_HEIGHT
-			);
+        /* Sets the size of this object's sprites according to the size of the given sprite.
+           Calculates the dimensions for blitting.
+         */
+        void resize(const Sprite& sprite) noexcept {
+            blank_square = std::make_unique<Sprite>(
+                BLANK_SQUARE_IMAGE, sprite, SQUARE_WIDTH, SQUARE_HEIGHT
+            );
+            
+            filled_square = std::make_unique<Sprite>(
+                FILLED_SQUARE_IMAGE, sprite, SQUARE_WIDTH, SQUARE_HEIGHT
+            );
+            
+            marked_square = std::make_unique<Sprite>(
+                MARKED_SQUARE_IMAGE, sprite, SQUARE_WIDTH, SQUARE_HEIGHT
+            );
 			
-			for (int i = 0; i < DIGITS; i++) {
-				numbers[i] = new Surface(
-					NUMBER_IMAGES[i], display->get_width(), display->get_height(),
-					0, COLON_Y, NUMBER_WIDTH, NUMBER_HEIGHT
+			for (int i = 0; i < DIGITS; ++i) {
+				number_squares[i] = std::make_unique<Sprite>(
+					NUMBER_SQUARE_IMAGES[i], sprite, SQUARE_WIDTH, SQUARE_HEIGHT
 				);
 			}
-		}
-		
-		/* Deletes the surfaces allocated
+            
+            // The dimensions are calculated.
+			width = GRID_WIDTH * sprite.width();
+			height = GRID_HEIGHT * sprite.height();
+			x = GRID_X * sprite.width() - width / 2;
+			y = GRID_Y * sprite.height() - height / 2;
+			width = SQUARE_WIDTH * sprite.width();
+			height = SQUARE_HEIGHT * sprite.height();
+        }
+        
+	private:
+		std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> target; // The pattern to be found.
+		std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> board; // The current pattern.
+		std::array<std::array<int, MAX_HINT>, BOARD_SIZE> rows; // The row hints.
+		std::array<std::array<int, MAX_HINT>, BOARD_SIZE> columns; // The column hints.
+        
+		RNG generator; // Pseudo-Random Number Generator.
+        
+		std::unique_ptr<Sprite> blank_square; // The sprite for a square that hasn't been filled yet.
+		std::unique_ptr<Sprite> filled_square; // The sprite for a square that has been filled.
+		std::unique_ptr<Sprite> marked_square; // The sprite for a square that has been marked as empty.
+        
+        // The digits 0 - 9 (used in for row/col hints).
+		std::array<std::unique_ptr<Sprite>, DIGITS> number_squares;
+        
+		int x; // x co-ordinate of the board's left edge.
+		int y; // y co-ordinate of the board's right edge.
+		int width; // Width of a board square.
+		int height; // Hieght of a board square.
+        int x_index = -1; // The index of the last clicked column.
+        int y_index = -1; // The index of the last clicked row.
+};
+
+/* Class for the game timer.
+ */
+class Clock {
+	public:
+		/* Initialises the sprites for the numbers and the colon.
 		 */
-		~Timer() {
-			delete colon;
-			
-			for (int i = 0; i < DIGITS; i++) {
-				delete numbers[i];
-			}
+		Clock(const Sprite& sprite) {
+			resize(sprite);
+            start();
 		}
 		
 		/* Starts the timer
 		 */
 		void start() {
-			start_ = get_time();
+			start_ = Timer::time();
 			now = -1;
 		}
 		
-		/* Blits the timer to the surface
+		/* Blits the timer to the given sprite.
 		 */
-		void blit(SDL_Surface* surface) {
+		void blit_to(Sprite& sprite) {
 			// The time is split into minutes and seconds
 			int minutes = now / 60;
 			int seconds = now % 60;
 			
-			// If an hour has passed, no time is displayed
-			if (minutes < 60) {
+			// If too much time has passed, no time is displayed
+			if (minutes < MAX_TIME) {
 				// The minute-second separator is blitted
-				colon->blit(surface);
+				colon->blit_to(sprite);
 				
 				// The digits to be used are calculated
 				int m1 = minutes / 10;
 				int m2 = minutes % 10;
 				int s1 = seconds / 10;
 				int s2 = seconds % 10;
-				
-				numbers[m1]->blit_x(surface, MINUTE_X1);
-				numbers[m2]->blit_x(surface, MINUTE_X2);
-				numbers[s1]->blit_x(surface, SECOND_X1);
-				numbers[s2]->blit_x(surface, SECOND_X2);
+                
+                sprite.blit(*numbers[m1], MINUTE_X1, COLON_Y);
+                sprite.blit(*numbers[m2], MINUTE_X2, COLON_Y);
+                sprite.blit(*numbers[s1], SECOND_X1, COLON_Y);
+                sprite.blit(*numbers[s2], SECOND_X2, COLON_Y);
 			}
 		}
 		
@@ -881,7 +634,7 @@ class Timer {
 		 */
 		bool update() {
 			// The time elapsed since the start is obtained
-			int now_ = get_time() - start_;
+			int now_ = Timer::time() - start_;
 			
 			// If the time changed, the time is updated and true is returned.
 			if (now < now_) {
@@ -893,119 +646,355 @@ class Timer {
 			return false;
 		}
 		
+        /* Sets the size of the colon and numbers according to the size of the given sprite.
+         */
+        void resize(const Sprite& sprite) noexcept {
+            colon = std::make_unique<Button>(
+                Sprite(COLON_IMAGE, sprite, COLON_WIDTH, COLON_HEIGHT),
+                sprite, COLON_X, COLON_Y
+            );
+            
+			for (int i = 0; i < DIGITS; ++i) {
+				numbers[i] = std::make_unique<Sprite>(NUMBER_IMAGES[i], sprite, NUMBER_WIDTH, NUMBER_HEIGHT);
+			}
+        }
+        
 	private:
-		Surface* colon; // The separator of the minutes and seconds
-		Surface* numbers[DIGITS]; // The digits 0 - 9
+		std::unique_ptr<Button> colon; // The separator of the minutes and seconds.
+		std::array<std::unique_ptr<Sprite>, DIGITS> numbers; // The digits 0 - 9.
 		double start_; // The time that the timer was started at.
 		int now; // The current time (in seconds rounded down).
 };
 
-/* Class for the hint counter
+/* Class for the hint counter.
  */
 class HintCounter {
 	public:
-		/* Creates sprites for the numbers and sets their heights
+		/* Creates sprites for the numbers and sets their size based on the given sprite.
 		 */
-		HintCounter(Display* display) {
-			for (int i = 0; i < DIGITS; i++) {
-				numbers[i] = new Surface(
-					NUMBER_IMAGES[i], display->get_width(), display->get_height(),
-					0, HINT_COUNT_Y, NUMBER_WIDTH, NUMBER_HEIGHT
-				);
-			}
-		}
-		
-		/* Deletes the sprites for the numbers
-		 */
-		~HintCounter() {
-			for (int i = 0; i < DIGITS; i++) {
-				delete numbers[i];
-			}
+		HintCounter(const Sprite& sprite) noexcept {
+            resize(sprite);
+            reset();
 		}
 	
-		/* Sets the number of hints to zero
+		/* Sets the number of hints to zero.
 		 */
-		void reset() {
+		void reset() noexcept {
 			hints = 0;
 		}
 		
-		/* Sets the number of hints to the maximum
+		/* Sets the number of hints to the maximum.
 		 */
-		void max() {
+		void max() noexcept {
 			hints = BOARD_SIZE * BOARD_SIZE;
 		}
 		
-		/* Increments the number of hints
+		/* Increments the number of hints.
 		 */
-		void operator++(int) {
-			hints++;
+		HintCounter& operator++() noexcept {
+			++hints;
+            return *this;
 		}
 		
-		void blit(SDL_Surface* surface) {
+        /* Blits the hint value to the given sprite.
+         */
+		void blit_to(Sprite& sprite) const noexcept {
 			int tens = hints / 10;
 			int units = hints % 10;
-			
-			numbers[tens]->blit_x(surface, TEN_X);
-			numbers[units]->blit_x(surface, UNIT_X);
+            
+            sprite.blit(*numbers[tens], TEN_X, HINT_COUNT_Y);
+            sprite.blit(*numbers[units], UNIT_X, HINT_COUNT_Y);
 		}
+        
+        /* Sets the size of the numbers according to the size of the given sprite.
+         */
+        void resize(const Sprite& sprite) noexcept {
+			for (int i = 0; i < DIGITS; ++i) {
+				numbers[i] = std::make_unique<Sprite>(NUMBER_IMAGES[i], sprite, NUMBER_WIDTH, NUMBER_HEIGHT);
+			}
+        }
 		
 	private:
-		Surface* numbers[DIGITS];
-		int hints;
+		std::array<std::unique_ptr<Sprite>, DIGITS> numbers; // The digits 0 - 9.
+		int hints; // The number of hints used this round.
 };
 
-/* Starts a game of Picross
+/* Starts a game of Picross.
  */
-void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
-	Board board(display);
-	Timer timer(display);
+bool game(Display& display, Button& background) noexcept {
+	// The game sprites are initialised.
+    Button hint(Sprite(HINT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, HINT_Y);
+    Button solve(Sprite(SOLVE_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, SOLVE_Y);
+    Button quit(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, QUIT2_Y);
+    Button new_(Sprite(NEW_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, NEW_Y);
+    Button reset(Sprite(RESET_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, RESET_Y);
+    Button hints(Sprite(HINTS_IMAGE, display, HINTS_WIDTH, HINTS_HEIGHT), display, HINTS_X, HINTS_Y);
+    Button time_(Sprite(TIME_IMAGE, display, TIME_WIDTH, TIME_HEIGHT), display, TIME_X, TIME_Y);
+    
+    // Handles events.
+    Event event;
+    
+    // True when the game loop should end.
+    bool end = false;
+    
+    // True if the corresponding button was clicked.
+    bool hint_clicked = false;
+    bool solve_clicked = false;
+    bool quit_clicked = false;
+    bool new_clicked = false;
+    bool reset_clicked = false;
+    
+    // The game elements are initialised just before the
+    //   loop (for the timer to start as late as possible).
+    Board board(display);
 	HintCounter hint_counter(display);
-	
-	Surface hint(
-		HINT_IMAGE, display->get_width(), display->get_height(),
-		BUTTON_X, HINT_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	Surface solve(
-		SOLVE_IMAGE, display->get_width(), display->get_height(),
-		BUTTON_X, SOLVE_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	Surface quit(
-		QUIT_IMAGE, display->get_width(), display->get_height(),
-		BUTTON_X, QUIT2_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	Surface new_(
-		NEW_IMAGE, display->get_width(), display->get_height(),
-		BUTTON_X, NEW_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	Surface reset(
-		RESET_IMAGE, display->get_width(), display->get_height(),
-		BUTTON_X, RESET_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	Surface hints(
-		HINTS_IMAGE, display->get_width(), display->get_height(),
-		HINTS_X, HINTS_Y, HINTS_WIDTH, HINTS_HEIGHT
-	);
-	
-	Surface time_(
-		TIME_IMAGE, display->get_width(), display->get_height(),
-		TIME_X, TIME_Y, TIME_WIDTH, TIME_HEIGHT
-	);
+	Clock timer(display);
 		
-	// The mouse
-	SDL_Point mouse;
-	
-	// Main game loop
-	while (true) {
-		timer.start();
-		hint_counter.reset();
-		bool new_puzzle = false;
-		bool reset_puzzle = false;
+	// Initialisation loop.
+	while (!end) {
+        bool round_end = false;
+		bool show_result = true;
+        
+        // Main game loop.
+        while (!end && !round_end) {
+            // If the board was solved, the round ends.
+            if (board.solved()) {
+                round_end = true;
+            }
+            
+            // The timer is updated.
+            timer.update();
+            
+            // The sprites are displayed.
+            background.blit_to(display);
+            board.blit_board(display);
+            hint_counter.blit_to(display);
+            timer.blit_to(display);
+            hint.blit_to(display);
+            solve.blit_to(display);
+            quit.blit_to(display);
+            new_.blit_to(display);
+            reset.blit_to(display);
+            hints.blit_to(display);
+            time_.blit_to(display);
+            display.update();
+            
+            // Real-time event handling loop.
+            while (!end && !round_end && event.poll()) {
+                // Check event type.
+                switch (event.type()) {
+                    // End the game.
+                    case Event::TERMINATE: //{
+                        return true;
+                    //}
+                    
+                    // Resize (and rotation) handling.
+                    case Event::RESIZE: //{
+                        // The display and sprites are resized.
+                        display.resize(event.window_width(), event.window_height());
+                        board.resize(display);
+                        timer.resize(display);
+                        hint_counter.resize(display);
+                        
+                        background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                        hint = Button(Sprite(HINT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, HINT_Y);
+                        solve = Button(Sprite(SOLVE_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, SOLVE_Y);
+                        quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, QUIT2_Y);
+                        new_ = Button(Sprite(NEW_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, NEW_Y);
+                        reset = Button(Sprite(RESET_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, RESET_Y);
+                        hints = Button(Sprite(HINTS_IMAGE, display, HINTS_WIDTH, HINTS_HEIGHT), display, HINTS_X, HINTS_Y);
+                        time_ = Button(Sprite(TIME_IMAGE, display, TIME_WIDTH, TIME_HEIGHT), display, TIME_X, TIME_Y);
+                        
+                        break;
+                    //}
+                    
+                    // Mouse clicks (and screen touches).
+                    case Event::LEFT_CLICK: //{
+                        if (hint.get_rectangle().contains(event.click_position())) {
+                            hint_clicked = true;
+                        }
+                        
+                        else if (solve.get_rectangle().contains(event.click_position())) {
+                            solve_clicked = true;
+                        }
+                        
+                        else if (quit.get_rectangle().contains(event.click_position())) {
+                            quit_clicked = true;
+                        }
+                        
+                        else if (new_.get_rectangle().contains(event.click_position())) {
+                            new_clicked = true;
+                        }
+                        
+                        else if (reset.get_rectangle().contains(event.click_position())) {
+                            reset_clicked = true;
+                        }
+                        
+                        // The board is notified of the click (or touch).
+                        else {
+                            board.click_check(event.click_position(), true, false);
+                        }
+                        
+                        break;
+                    //}
+                    
+                    // Mouse (and screen) releases.
+                    case Event::LEFT_UNCLICK: //{
+                        // If hint was clicked, a square is filled in.
+                        if (hint_clicked && hint.get_rectangle().contains(event.click_position())) {
+                            board.hint();
+                            ++hint_counter;
+                        }
+                        
+                        // Else, if solve was clicked, the solution is displayed.
+                        else if (solve_clicked && solve.get_rectangle().contains(event.click_position())) {
+                            board.solve();
+                            hint_counter.max();
+                            round_end = true;
+                        }
+                        
+                        // Else, if quit was clicked, the main menu is returned to.
+                        else if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
+                            end = true;
+                        }
+                        
+                        // Else, if new was clicked, a new puzzle is made.
+                        else if (new_clicked && new_.get_rectangle().contains(event.click_position())) {
+                            board.new_puzzle();
+                            round_end = true;
+                            show_result = false;
+                        }
+                        
+                        // Else, if reset was clicked, the puzzle is reset.
+                        else if (reset_clicked && reset.get_rectangle().contains(event.click_position())) {
+                            board.reset_puzzle();
+                            round_end = true;
+                            show_result = false;
+                        }
+                        
+                        // Else, the board is notified of the release.
+                        else {
+                            board.click_check(event.click_position(), true, true);
+                        }
+                        
+                        // The click statuses are reset.
+                        hint_clicked = false;
+                        solve_clicked = false;
+                        quit_clicked = false;
+                        new_clicked = false;
+                        reset_clicked = false;
+                        
+                        break;
+                    //}
+                    
+                    // Right clicks.
+                    case Event::RIGHT_CLICK: //{
+                        board.click_check(event.click_position(), false, false);
+                        break;
+                    //}
+                    
+                    // Right click releases.
+                    case  Event::RIGHT_UNCLICK: //{
+                        board.click_check(event.click_position(), false, true);
+                        break;
+                    //}
+                }
+            }
+        }
+        
+        // Wait for the player to quit, get a new puzzle, or reset the puzzle.
+        while (!end && show_result) {
+            // The sprites are displayed.
+            background.blit_to(display);
+            board.blit_board(display);
+            hint_counter.blit_to(display);
+            timer.blit_to(display);
+            hint.blit_to(display);
+            solve.blit_to(display);
+            quit.blit_to(display);
+            new_.blit_to(display);
+            reset.blit_to(display);
+            hints.blit_to(display);
+            time_.blit_to(display);
+            display.update();
+            
+            // Wait for an event.
+            event.wait();
+            
+            // Check event type.
+            switch (event.type()) {
+                // End the game.
+                case Event::TERMINATE: //{
+                    return true;
+                //}
+                
+                // Resize (and rotation) handling.
+                case Event::RESIZE: //{
+                    // The display and sprites are resized.
+                    display.resize(event.window_width(), event.window_height());
+                    board.resize(display);
+                    timer.resize(display);
+                    hint_counter.resize(display);
+                    
+                    background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                    hint = Button(Sprite(HINT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, HINT_Y);
+                    solve = Button(Sprite(SOLVE_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, SOLVE_Y);
+                    quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, QUIT2_Y);
+                    new_ = Button(Sprite(NEW_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, NEW_Y);
+                    reset = Button(Sprite(RESET_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, RESET_Y);
+                    hints = Button(Sprite(HINTS_IMAGE, display, HINTS_WIDTH, HINTS_HEIGHT), display, HINTS_X, HINTS_Y);
+                    time_ = Button(Sprite(TIME_IMAGE, display, TIME_WIDTH, TIME_HEIGHT), display, TIME_X, TIME_Y);
+                    
+                    break;
+                //}
+                
+                // Mouse clicks (and screen touches).
+                case Event::LEFT_CLICK: //{
+                    if (quit.get_rectangle().contains(event.click_position())) {
+                        quit_clicked = true;
+                    }
+                    
+                    else if (new_.get_rectangle().contains(event.click_position())) {
+                        new_clicked = true;
+                    }
+                    
+                    else if (reset.get_rectangle().contains(event.click_position())) {
+                        reset_clicked = true;
+                    }
+                    
+                    break;
+                //}
+                
+                // Mouse (and screen) releases.
+                case Event::LEFT_UNCLICK: //{
+                    // If quit was clicked, the main menu is returned to.
+                    if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
+                        end = true;
+                    }
+                    
+                    // Else, if new was clicked, a new puzzle is made.
+                    else if (new_clicked && new_.get_rectangle().contains(event.click_position())) {
+                        board.new_puzzle();
+                        show_result = false;
+                    }
+                    
+                    // Else, if reset was clicked, the puzzle is reset.
+                    else if (reset_clicked && reset.get_rectangle().contains(event.click_position())) {
+                        board.reset_puzzle();
+                        show_result = false;
+                    }
+                    
+                    // The click statuses are reset.
+                    quit_clicked = false;
+                    new_clicked = false;
+                    reset_clicked = false;
+                    
+                    break;
+                //}
+            }
+        }
 		
+        #ifdef PICROSS_2_V1
 		// Puzzle solving loop
 		while (!new_puzzle && !reset_puzzle && !board.solved()) {
 			// Music is requeued if necessary
@@ -1026,7 +1015,7 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				// Else, if the player requested a hint, a square is filled in
 				else if (hint.in_rect(&mouse)) {
 					board.hint();
-					hint_counter++;
+					++hint_counter;
 				}
 				
 				// Else, if the player requested the solution, the solution is displayed
@@ -1089,25 +1078,6 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 				time_.blit(display->get_surface());
 				display->update();
 			}
-			
-			// The display is updated, if the timer was updated.
-			else if (timer.update()) {
-				background->blit(display->get_surface());
-				board.blit_board(display->get_surface());
-				timer.blit(display->get_surface());
-				hint_counter.blit(display->get_surface());
-				hint.blit(display->get_surface());
-				solve.blit(display->get_surface());
-				quit.blit(display->get_surface());
-				new_.blit(display->get_surface());
-				reset.blit(display->get_surface());
-				hints.blit(display->get_surface());
-				time_.blit(display->get_surface());
-				display->update();
-			}
-			
-			// Events are updated
-			SDL_PumpEvents();
 		}
 		
 		// If the board was solved, the target is displayed (no marks)
@@ -1154,159 +1124,226 @@ void game(Display* display, MusicQueuer* music_queuer, Surface* background) {
 		else {
 			board.reset_puzzle();
 		}
+        #endif
+        
+        // The timer and hint counter are reset.
+		timer.start();
+		hint_counter.reset();
 	}
+    
+    return false;
 }
 
-/* Displays the help screen
+/* Displays the help screen.
  */
-void help(Display* display, MusicQueuer* music_queuer) {
-	Surface help_screen(
-		HELP_SCREEN_IMAGE, display->get_width(), display->get_height(),
-		HELP_SCREEN_X, HELP_SCREEN_Y, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT
-	);
+bool help(Display& display, const Sprite& snapshot) noexcept {
+    Button help_screen(
+        Sprite(HELP_SCREEN_IMAGE, display, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT),
+        display, HELP_SCREEN_X, HELP_SCREEN_Y
+    );
 	
-	help_screen.blit(display->get_surface());
-	display->update();
-	
-	SDL_Point mouse;
-	
-	while (true) {
-		// Clicking off of the help screen removes it
-		if (SDL_GetMouseState(NULL, NULL) & LEFT_CLICK) {
-			// Waits until the mouse is released
-			while (SDL_GetMouseState(&mouse.x, &mouse.y) & LEFT_CLICK) {
-				SDL_PumpEvents();
-			}
-			
-			if (!help_screen.in_rect(&mouse)) {
-				break;
-			}
-		}
-			
-		// Music is still requeued in the help screen
-		music_queuer->requeue();
-		
-		// Events are updated
-		SDL_PumpEvents();
+    // Handles events.
+    Event event;
+    
+    // True when the help screen should be closed.
+    bool end = false;
+    
+	while (!end) {
+        // The help screen is displayed.
+        help_screen.blit_to(display);
+        display.update();
+            
+        // Wait for an event.
+        event.wait();
+        
+        // Handle the event.
+        switch (event.type()) {
+            // End the game.
+            case Event::TERMINATE: //{
+                return true;
+            //}
+            
+            // Resize (and rotation) handling.
+            case Event::RESIZE: //{
+                // The display is reinitialised.
+                display.resize(event.window_width(), event.window_height());
+                
+                // The help screen is resized.
+                help_screen = Button(
+                    Sprite(HELP_SCREEN_IMAGE, display, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT),
+                    display, HELP_SCREEN_X, HELP_SCREEN_Y
+                );
+                
+                // The display is returned to its former state.
+                display.blit(snapshot);
+                
+                break;
+            //}
+            
+            // A click (or touch) exits the help screen.
+            case Event::LEFT_UNCLICK: //{
+                end = true;
+                break;
+            //}
+        }
 	}
+    
+    return false;
 }
 
-/* Initialises SDL and loads the main menu
+/* Initialises SDL and loads the main menu.
  */
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
 	// SDL is initialised for video and audio
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+	System::initialise(System::VIDEO | System::AUDIO);
+    
+    // The version of this program and the version of
+    //   the SDL and Net Utilities library are displayed.
+    std::string version_string = System::version(VERSION);
+    std::cout
+        << "\nPicross 2 by Chigozie Agomo.\nVersion: "
+        << version_string
+        << "\n\nPowered by:\n"
+        << System::info()
+        << "\n\n"
+    ;
 	
-	// The display is initialised (the window and its surface)
-	Display* display = new Display;
-	
-	// The main menu surfaces are initialised
-	Surface* background = new Surface(
-		BACKGROUND_IMAGE, 0, 0, display->get_width(), display->get_height()
-	);
-	
-	Surface* title = new Surface(
-		TITLE_IMAGE, display->get_width(), display->get_height(),
-		TITLE_X, TITLE_Y, TITLE_WIDTH, TITLE_HEIGHT
-	);
-	
-	Surface* play_mode = new Surface(
-		PLAY_IMAGE, display->get_width(), display->get_height(),
-		PLAY_X, PLAY_Y, PLAY_WIDTH, PLAY_HEIGHT
-	);
-	
-	Surface* help_mode = new Surface(
-		HELP_IMAGE, display->get_width(), display->get_height(),
-		HELP_X, HELP_Y, HELP_WIDTH, HELP_HEIGHT
-	);
-	
-	Surface* quit = new Surface(
-		QUIT_IMAGE, display->get_width(), display->get_height(),
-		QUIT_X, QUIT_Y, BUTTON_WIDTH, BUTTON_HEIGHT
-	);
-	
-	// The menu's assets are displayed
-	background->blit(display->get_surface());
-	title->blit(display->get_surface());
-	play_mode->blit(display->get_surface());
-	help_mode->blit(display->get_surface());
-	quit->blit(display->get_surface());
-	
-	display->update();
-	
-	// The song is loaded and played
-	MusicQueuer* music_queuer = new MusicQueuer(SONG, SONG_LENGTH);
-	
-	// The mouse is declared
-	SDL_Point mouse;
-	
-	// Main menu loop
-	while (true) {
-		// If the mouse is clicked, what was clicked is checked
-		// If a display changing option was clicked, the main menu will
-		//   be reblitted after the operation is completed
-		if (SDL_GetMouseState(NULL, NULL) & LEFT_CLICK) {
-			// The game waits for the mouse click to be released
-			while (SDL_GetMouseState(&mouse.x, &mouse.y) & LEFT_CLICK) {
-				SDL_PumpEvents();
-			}
-			
-			// If play was clicked, the game begins
-			if (play_mode->in_rect(&mouse)) {
-				game(display, music_queuer, background);
-				background->blit(display->get_surface());
-				title->blit(display->get_surface());
-				play_mode->blit(display->get_surface());
-				help_mode->blit(display->get_surface());
-				quit->blit(display->get_surface());
-				display->update();
-			}
-			
-			// Else, if help was clicked, the help menu is displayed
-			else if (help_mode->in_rect(&mouse)) {
-				help(display, music_queuer);
-				background->blit(display->get_surface());
-				title->blit(display->get_surface());
-				play_mode->blit(display->get_surface());
-				help_mode->blit(display->get_surface());
-				quit->blit(display->get_surface());
-				display->update();
-			}
-			
-			// Else, if quit was clicked, the game shuts down
-			else if (quit->in_rect(&mouse)) {
-				break;
-			}
-		}
-		
-		// Music is queued if necessary
-		music_queuer->requeue();
-		
-		// Events are updated
-		SDL_PumpEvents();
+    {
+        // The display is initialised.
+        Display display;
+        
+        // The main menu sprites are initialised.
+        Button background(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+        Button title(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+        Button play_mode(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+        Button help_mode(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+        Button quit(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+        
+        // The song is loaded and played
+        AudioThread music_queuer(SONG, SONG_LENGTH);
+        
+        // Handles events.
+        Event event;
+        
+        // True when the game should end.
+        bool end = false;
+        
+        // True if the corresponding button was clicked.
+        bool play_clicked = false;
+        bool help_clicked = false;
+        bool quit_clicked = false;
+        
+        // Main menu loop
+        while (!end) {
+            // The menu's sprites are displayed.
+            background.blit_to(display);
+            title.blit_to(display);
+            play_mode.blit_to(display);
+            help_mode.blit_to(display);
+            quit.blit_to(display);
+            display.update();
+            
+            // Wait for an event.
+            event.wait();
+            
+            // Handle the event.
+            switch (event.type()) {
+                // End the game.
+                case Event::TERMINATE: //{
+                    end = true;
+                    break;
+                //}
+                
+                // Resize (and rotation) handling.
+                case Event::RESIZE: //{
+                    // The display is resized.
+                    display.resize(event.window_width(), event.window_height());
+                    
+                    // The sprites are resized.
+                    background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                    title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+                    play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+                    help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+                    quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+                    
+                    break;
+                //}
+                
+                // Mouse clicks (and screen touches).
+                case Event::LEFT_CLICK: //{
+                    if (play_mode.get_rectangle().contains(event.click_position())) {
+                        play_clicked = true;
+                    }
+                    
+                    else if (help_mode.get_rectangle().contains(event.click_position())) {
+                        help_clicked = true;
+                    }
+                    
+                    else if (quit.get_rectangle().contains(event.click_position())) {
+                        quit_clicked = true;
+                    }
+                    
+                    break;
+                //}
+                
+                // Mouse (and screen) releases.
+                case Event::LEFT_UNCLICK: //{
+                    // If play was clicked, the game begins.
+                    if (play_clicked && play_mode.get_rectangle().contains(event.click_position())) {
+                        end = game(display, background);
+                    
+                        // The sprites are resized.
+                        background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                        title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+                        play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+                        help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+                        quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+                    }
+                    
+                    // Else, if help was clicked, the help menu is displayed.
+                    else if (help_clicked && help_mode.get_rectangle().contains(event.click_position())) {
+                        // The display's current appearance is stored.
+                        Sprite snapshot(display);
+                        end = help(display, snapshot);
+                        
+                        // The sprites are resized.
+                        background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                        title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+                        play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+                        help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+                        quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+                    }
+                    
+                    // Else, if quit was clicked, the game shuts down.
+                    else if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
+                        end = true;
+                    }
+                    
+                    // The click statuses are reset.
+                    play_clicked = false;
+                    help_clicked = false;
+                    quit_clicked = false;
+                    
+                    break;
+                //}
+            }
+        }
 	}
 	
-	// Wrapper objects are deleted
-	delete music_queuer;
-	delete background;
-	delete title;
-	delete play_mode;
-	delete help_mode;
-	delete quit;
-	
-	// SDL is shutdown
-	SDL_Quit();
-	
-	return 0;
+	// The library is shut down.
+    System::terminate();
+    return 0;
 }
 
 /* CHANGELOG:
-	 v1:
-	   Release.
-	 v1.1:
-	   Left click and right click now cycle through cell states rather than setting them.
-	 v1.2:
-	   The display is only rendered to after a click or after a seocnd passes.
+     v2:
+       Use modern sdlandnet and reverse changelog order.
 	 v1.2.0.1:
 	   The display update is now paired with the rendering.
+	 v1.2:
+	   The display is only rendered to after a click or after a seocnd passes.
+	 v1.1:
+	   Left click and right click now cycle through cell states rather than setting them.
+	 v1:
+	   Release.
  */
