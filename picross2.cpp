@@ -4,7 +4,7 @@
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 0};
+constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 1};
 
 // Window title
 constexpr const char* TITLE = "Picross 2 by Chigozie Agomo";
@@ -759,6 +759,7 @@ bool game(Display& display, Button& background) noexcept {
         while (!end && !round_end) {
             // If the board was solved, the round ends.
             if (board.solved()) {
+                board.solve();
                 round_end = true;
             }
             
@@ -1336,6 +1337,8 @@ int main(int argc, char** argv) {
 }
 
 /* CHANGELOG:
+     v2.0.0.1:
+       Hide hints upon solving the puzzle.
      v2:
        Use modern sdlandnet and reverse changelog order.
 	 v1.2.0.1:
