@@ -4,7 +4,7 @@
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 1};
+constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 2};
 
 // Window title
 constexpr const char* TITLE = "Picross 2 by Chigozie Agomo";
@@ -919,79 +919,107 @@ bool game(Display& display, Button& background) noexcept {
             time_.blit_to(display);
             display.update();
             
-            // Wait for an event.
-            event.wait();
-            
-            // Check event type.
-            switch (event.type()) {
-                // End the game.
-                case Event::TERMINATE: //{
-                    return true;
-                //}
-                
-                // Resize (and rotation) handling.
-                case Event::RESIZE: //{
-                    // The display and sprites are resized.
-                    display.resize(event.window_width(), event.window_height());
-                    board.resize(display);
-                    timer.resize(display);
-                    hint_counter.resize(display);
+            // Check for an event.
+            while (!end && show_result && event.poll()) {
+                // Check event type.
+                switch (event.type()) {
+                    // End the game.
+                    case Event::TERMINATE: //{
+                        return true;
+                    //}
                     
-                    background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
-                    hint = Button(Sprite(HINT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, HINT_Y);
-                    solve = Button(Sprite(SOLVE_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, SOLVE_Y);
-                    quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, QUIT2_Y);
-                    new_ = Button(Sprite(NEW_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, NEW_Y);
-                    reset = Button(Sprite(RESET_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, BUTTON_X, RESET_Y);
-                    hints = Button(Sprite(HINTS_IMAGE, display, HINTS_WIDTH, HINTS_HEIGHT), display, HINTS_X, HINTS_Y);
-                    time_ = Button(Sprite(TIME_IMAGE, display, TIME_WIDTH, TIME_HEIGHT), display, TIME_X, TIME_Y);
+                    // Resize (and rotation) handling.
+                    case Event::RESIZE: //{
+                        // The display and sprites are resized.
+                        display.resize(event.window_width(), event.window_height());
+                        board.resize(display);
+                        timer.resize(display);
+                        hint_counter.resize(display);
+                        
+                        background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                        
+                        hint = Button(
+                            Sprite(HINT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT),
+                            display, BUTTON_X, HINT_Y
+                        );
+                        
+                        solve = Button(
+                            Sprite(SOLVE_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT),
+                            display, BUTTON_X, SOLVE_Y
+                        );
+                        
+                        quit = Button(
+                            Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT),
+                            display, BUTTON_X, QUIT2_Y
+                        );
+                        
+                        new_ = Button(
+                            Sprite(NEW_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT),
+                            display, BUTTON_X, NEW_Y
+                        );
+                        
+                        reset = Button(
+                            Sprite(RESET_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT),
+                            display, BUTTON_X, RESET_Y
+                        );
+                        
+                        hints = Button(
+                            Sprite(HINTS_IMAGE, display, HINTS_WIDTH, HINTS_HEIGHT),
+                            display, HINTS_X, HINTS_Y
+                        );
+                        
+                        time_ = Button(
+                            Sprite(TIME_IMAGE, display, TIME_WIDTH, TIME_HEIGHT),
+                            display, TIME_X, TIME_Y
+                        );
+                        
+                        break;
+                    //}
                     
-                    break;
-                //}
-                
-                // Mouse clicks (and screen touches).
-                case Event::LEFT_CLICK: //{
-                    if (quit.get_rectangle().contains(event.click_position())) {
-                        quit_clicked = true;
-                    }
+                    // Mouse clicks (and screen touches).
+                    case Event::LEFT_CLICK: //{
+                        if (quit.get_rectangle().contains(event.click_position())) {
+                            quit_clicked = true;
+                        }
+                        
+                        else if (new_.get_rectangle().contains(event.click_position())) {
+                            new_clicked = true;
+                        }
+                        
+                        else if (reset.get_rectangle().contains(event.click_position())) {
+                            reset_clicked = true;
+                        }
+                        
+                        break;
+                    //}
                     
-                    else if (new_.get_rectangle().contains(event.click_position())) {
-                        new_clicked = true;
-                    }
-                    
-                    else if (reset.get_rectangle().contains(event.click_position())) {
-                        reset_clicked = true;
-                    }
-                    
-                    break;
-                //}
-                
-                // Mouse (and screen) releases.
-                case Event::LEFT_UNCLICK: //{
-                    // If quit was clicked, the main menu is returned to.
-                    if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
-                        end = true;
-                    }
-                    
-                    // Else, if new was clicked, a new puzzle is made.
-                    else if (new_clicked && new_.get_rectangle().contains(event.click_position())) {
-                        board.new_puzzle();
-                        show_result = false;
-                    }
-                    
-                    // Else, if reset was clicked, the puzzle is reset.
-                    else if (reset_clicked && reset.get_rectangle().contains(event.click_position())) {
-                        board.reset_puzzle();
-                        show_result = false;
-                    }
-                    
-                    // The click statuses are reset.
-                    quit_clicked = false;
-                    new_clicked = false;
-                    reset_clicked = false;
-                    
-                    break;
-                //}
+                    // Mouse (and screen) releases.
+                    case Event::LEFT_UNCLICK: //{
+                        // If quit was clicked, the main menu is returned to.
+                        if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
+                            end = true;
+                        }
+                        
+                        // Else, if new was clicked, a new puzzle is made.
+                        else if (new_clicked && new_.get_rectangle().contains(event.click_position())) {
+                            board.new_puzzle();
+                            show_result = false;
+                        }
+                        
+                        // Else, if reset was clicked, the puzzle is reset.
+                        else if (reset_clicked && reset.get_rectangle().contains(event.click_position())) {
+                            board.reset_puzzle();
+                            show_result = false;
+                        }
+                        
+                        // The click statuses are reset.
+                        quit_clicked = false;
+                        new_clicked = false;
+                        reset_clicked = false;
+                        
+                        break;
+                    //}
+                }
             }
         }
 		
@@ -1154,38 +1182,38 @@ bool help(Display& display, const Sprite& snapshot) noexcept {
         help_screen.blit_to(display);
         display.update();
             
-        // Wait for an event.
-        event.wait();
-        
-        // Handle the event.
-        switch (event.type()) {
-            // End the game.
-            case Event::TERMINATE: //{
-                return true;
-            //}
-            
-            // Resize (and rotation) handling.
-            case Event::RESIZE: //{
-                // The display is reinitialised.
-                display.resize(event.window_width(), event.window_height());
+        // Check for an event.
+        while (!end && event.poll()) {
+            // Handle the event.
+            switch (event.type()) {
+                // End the game.
+                case Event::TERMINATE: //{
+                    return true;
+                //}
                 
-                // The help screen is resized.
-                help_screen = Button(
-                    Sprite(HELP_SCREEN_IMAGE, display, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT),
-                    display, HELP_SCREEN_X, HELP_SCREEN_Y
-                );
+                // Resize (and rotation) handling.
+                case Event::RESIZE: //{
+                    // The display is reinitialised.
+                    display.resize(event.window_width(), event.window_height());
+                    
+                    // The help screen is resized.
+                    help_screen = Button(
+                        Sprite(HELP_SCREEN_IMAGE, display, HELP_SCREEN_WIDTH, HELP_SCREEN_HEIGHT),
+                        display, HELP_SCREEN_X, HELP_SCREEN_Y
+                    );
+                    
+                    // The display is returned to its former state.
+                    display.blit(snapshot);
+                    
+                    break;
+                //}
                 
-                // The display is returned to its former state.
-                display.blit(snapshot);
-                
-                break;
-            //}
-            
-            // A click (or touch) exits the help screen.
-            case Event::LEFT_UNCLICK: //{
-                end = true;
-                break;
-            //}
+                // A click (or touch) exits the help screen.
+                case Event::LEFT_UNCLICK: //{
+                    end = true;
+                    break;
+                //}
+            }
         }
 	}
     
@@ -1244,68 +1272,20 @@ int main(int argc, char** argv) {
             quit.blit_to(display);
             display.update();
             
-            // Wait for an event.
-            event.wait();
-            
-            // Handle the event.
-            switch (event.type()) {
-                // End the game.
-                case Event::TERMINATE: //{
-                    end = true;
-                    break;
-                //}
-                
-                // Resize (and rotation) handling.
-                case Event::RESIZE: //{
-                    // The display is resized.
-                    display.resize(event.window_width(), event.window_height());
+            // Check for an event.
+            while (!end && event.poll()) {
+                // Handle the event.
+                switch (event.type()) {
+                    // End the game.
+                    case Event::TERMINATE: //{
+                        end = true;
+                        break;
+                    //}
                     
-                    // The sprites are resized.
-                    background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
-                    title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
-                    play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
-                    help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
-                    quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
-                    
-                    break;
-                //}
-                
-                // Mouse clicks (and screen touches).
-                case Event::LEFT_CLICK: //{
-                    if (play_mode.get_rectangle().contains(event.click_position())) {
-                        play_clicked = true;
-                    }
-                    
-                    else if (help_mode.get_rectangle().contains(event.click_position())) {
-                        help_clicked = true;
-                    }
-                    
-                    else if (quit.get_rectangle().contains(event.click_position())) {
-                        quit_clicked = true;
-                    }
-                    
-                    break;
-                //}
-                
-                // Mouse (and screen) releases.
-                case Event::LEFT_UNCLICK: //{
-                    // If play was clicked, the game begins.
-                    if (play_clicked && play_mode.get_rectangle().contains(event.click_position())) {
-                        end = game(display, background);
-                    
-                        // The sprites are resized.
-                        background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
-                        title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
-                        play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
-                        help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
-                        quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
-                    }
-                    
-                    // Else, if help was clicked, the help menu is displayed.
-                    else if (help_clicked && help_mode.get_rectangle().contains(event.click_position())) {
-                        // The display's current appearance is stored.
-                        Sprite snapshot(display);
-                        end = help(display, snapshot);
+                    // Resize (and rotation) handling.
+                    case Event::RESIZE: //{
+                        // The display is resized.
+                        display.resize(event.window_width(), event.window_height());
                         
                         // The sprites are resized.
                         background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
@@ -1313,20 +1293,68 @@ int main(int argc, char** argv) {
                         play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
                         help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
                         quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
-                    }
+                        
+                        break;
+                    //}
                     
-                    // Else, if quit was clicked, the game shuts down.
-                    else if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
-                        end = true;
-                    }
+                    // Mouse clicks (and screen touches).
+                    case Event::LEFT_CLICK: //{
+                        if (play_mode.get_rectangle().contains(event.click_position())) {
+                            play_clicked = true;
+                        }
+                        
+                        else if (help_mode.get_rectangle().contains(event.click_position())) {
+                            help_clicked = true;
+                        }
+                        
+                        else if (quit.get_rectangle().contains(event.click_position())) {
+                            quit_clicked = true;
+                        }
+                        
+                        break;
+                    //}
                     
-                    // The click statuses are reset.
-                    play_clicked = false;
-                    help_clicked = false;
-                    quit_clicked = false;
-                    
-                    break;
-                //}
+                    // Mouse (and screen) releases.
+                    case Event::LEFT_UNCLICK: //{
+                        // If play was clicked, the game begins.
+                        if (play_clicked && play_mode.get_rectangle().contains(event.click_position())) {
+                            end = game(display, background);
+                        
+                            // The sprites are resized.
+                            background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                            title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+                            play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+                            help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+                            quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+                        }
+                        
+                        // Else, if help was clicked, the help menu is displayed.
+                        else if (help_clicked && help_mode.get_rectangle().contains(event.click_position())) {
+                            // The display's current appearance is stored.
+                            Sprite snapshot(display);
+                            end = help(display, snapshot);
+                            
+                            // The sprites are resized.
+                            background = Button(Sprite(BACKGROUND_IMAGE, display.width(), display.height()));
+                            title = Button(Sprite(TITLE_IMAGE, display, TITLE_WIDTH, TITLE_HEIGHT), display, TITLE_X, TITLE_Y);
+                            play_mode = Button(Sprite(PLAY_IMAGE, display, PLAY_WIDTH, PLAY_HEIGHT), display, PLAY_X, PLAY_Y);
+                            help_mode = Button(Sprite(HELP_IMAGE, display, HELP_WIDTH, HELP_HEIGHT), display, HELP_X, HELP_Y);
+                            quit = Button(Sprite(QUIT_IMAGE, display, BUTTON_WIDTH, BUTTON_HEIGHT), display, QUIT_X, QUIT_Y);
+                        }
+                        
+                        // Else, if quit was clicked, the game shuts down.
+                        else if (quit_clicked && quit.get_rectangle().contains(event.click_position())) {
+                            end = true;
+                        }
+                        
+                        // The click statuses are reset.
+                        play_clicked = false;
+                        help_clicked = false;
+                        quit_clicked = false;
+                        
+                        break;
+                    //}
+                }
             }
         }
 	}
@@ -1337,6 +1365,8 @@ int main(int argc, char** argv) {
 }
 
 /* CHANGELOG:
+     v2.0.0.2:
+       Use Event::poll() instead of Event::wait() for performance.
      v2.0.0.1:
        Hide hints upon solving the puzzle.
      v2:
