@@ -4,7 +4,7 @@
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[System::VERSION_LENGTH] = {2, 0, 0, 2};
+constexpr int VERSION[System::VERSION_LENGTH] = {2, 1, 0, 0};
 
 // Window title
 constexpr const char* TITLE = "Picross 2 by Chigozie Agomo";
@@ -135,7 +135,7 @@ class Board {
 	public:
 		/* Initialises the RNG and produces a grid with hints.
 		 */
-		Board(const Sprite& sprite):
+		Board(const Sprite& sprite) noexcept:
             generator()
         {
 			// The puzzle is initialised.
@@ -145,145 +145,17 @@ class Board {
             resize(sprite);
 		}
 				
-		/* Prints the target board to display (including hints).
-		 */
-		void print_target() {
-			std::cout << '\n';
-			
-			// Column hints are printed first
-			for (int i = 0; i < MAX_HINT; ++i) {
-				for (int j = 0; j < MAX_HINT; ++j) {
-					std::cout << "  ";
-				}
-				
-				std::cout << ' ';
-				
-				for (int j = 0; j < BOARD_SIZE; ++j) {
-					if (columns[j][i]) {
-						std::cout << columns[j][i] << ' ';
-					}
-					
-					else {
-						std::cout << "  ";
-					}
-				}
-				
-				std::cout << '\n';
-			}
-			
-			std::cout << '\n';
-			
-			// Row hints and the target board are then printed
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				for (int j = 0; j < MAX_HINT; ++j) {
-					if (rows[i][j]) {
-						std::cout << rows[i][j] << ' ';
-					}
-					
-					else {
-						std::cout << "  ";
-					}
-				}
-				
-				std::cout << ' ';
-				
-				for (int j = 0; j < BOARD_SIZE; ++j) {
-					std::cout << (target[i][j] ? 'O' : ' ') << ' ';
-				}
-				
-				std::cout << ' ' << i << '\n';
-			}
-			
-			std::cout << '\n';
-			
-			for (int i = 0; i < MAX_HINT; ++i) {
-				std::cout << "  ";
-			}
-			
-			std::cout << ' ';
-			
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				std::cout << i << ' ';
-			}
-			
-			std::cout << "\n\n";
-		}
-		
-		/* Prints the player's board to display (including hints).
-		 */
-		void print_board() {
-			std::cout << '\n';
-			
-			// Column hints are printed first
-			for (int i = 0; i < MAX_HINT; ++i) {
-				for (int j = 0; j < MAX_HINT; ++j) {
-					std::cout << "  ";
-				}
-				
-				std::cout << ' ';
-				
-				for (int j = 0; j < BOARD_SIZE; ++j) {
-					if (columns[j][i]) {
-						std::cout << columns[j][i] << ' ';
-					}
-					
-					else {
-						std::cout << "  ";
-					}
-				}
-				
-				std::cout << '\n';
-			}
-			
-			std::cout << '\n';
-			
-			// Row hints and the target board are then printed
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				for (int j = 0; j < MAX_HINT; ++j) {
-					if (rows[i][j]) {
-						std::cout << rows[i][j] << ' ';
-					}
-					
-					else {
-						std::cout << "  ";
-					}
-				}
-				
-				std::cout << ' ';
-				
-				for (int j = 0; j < BOARD_SIZE; ++j) {
-					std::cout << (board[i][j] ? (board[i][j] > 0 ? 'O' : 'X') : ' ') << ' ';
-				}
-				
-				std::cout << ' ' << i << '\n';
-			}
-			
-			std::cout << '\n';
-			
-			for (int i = 0; i < MAX_HINT; ++i) {
-				std::cout << "  ";
-			}
-			
-			std::cout << ' ';
-			
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				std::cout << i << ' ';
-			}
-			
-			std::cout << "\n\n";
-		}
-		
-		/* Returns true if the player's board matches the target.
+		/* Returns true if the player's board matches the target or hints.
            A simple equality match is insufficient, as EMPTY and MARKED should match.
 		 */
-		bool solved() {
+		bool solved() noexcept {
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0 ; j < BOARD_SIZE; ++j) {
 					if (
                         target[i][j] == FILLED && board[i][j] != FILLED
                         || target[i][j] != FILLED && board[i][j] == FILLED
                     ) {
-                        return false;
+                        return valid();
 					}
 				}
 			}
@@ -294,13 +166,13 @@ class Board {
 		/* Fills in a cell of the board.
 		   Duplicate commands erase the square.
 		 */
-		void fill(int command, int i, int j) {
+		void fill(int command, int i, int j) noexcept {
 			board[j][i] = board[j][i] == command ? 0 : command;
 		}
 			
 		/* Blits the target to the given sprite.
 		 */
-		void blit_target(Sprite& sprite) {
+		void blit_target(Sprite& sprite) const noexcept {
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < BOARD_SIZE; ++j) {
 					switch (board[i][j]) {
@@ -346,7 +218,7 @@ class Board {
 		
 		/* Blits the board to the given sprite.
 		 */
-		void blit_board(Sprite& sprite) {
+		void blit_board(Sprite& sprite) const noexcept {
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < BOARD_SIZE; ++j) {
 					switch (board[i][j]) {
@@ -399,13 +271,13 @@ class Board {
 
 		/* Makes a new puzzle.
 		 */
-		void new_puzzle() {
+		void new_puzzle() noexcept {
             // The board, row hints, and column hints are (re)initialised.
-            board = std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE>();
-            rows = std::array<std::array<int, MAX_HINT>, BOARD_SIZE>();
-            columns = std::array<std::array<int, MAX_HINT>, BOARD_SIZE>();
+            board = {};
+            rows = {};
+            columns = {};
             
-			// Target board and player board initialised
+			// Target board initialised.
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < BOARD_SIZE; ++j) {
 					target[i][j] = generator.get_int(EMPTY, FILLED);
@@ -445,19 +317,14 @@ class Board {
 		
 		/* Resets the puzzle.
 		 */
-		void reset_puzzle() {
-			// Player board initialised
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				for (int j = 0; j < BOARD_SIZE; ++j) {
-					board[i][j] = 0;
-				}
-			}
+		void reset_puzzle() noexcept {
+			board = {};
 		}
 
 		/* Checks if the board was clicked.
            If it was, the cell's state is cycled.
 		 */
-		void click_check(const Point& point, bool left_click, bool act) {
+		void click_check(const Point& point, bool left_click, bool act) noexcept {
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < BOARD_SIZE; ++j) {
 					Rectangle rect(
@@ -498,16 +365,12 @@ class Board {
 		/* Solves a single sqaure.
 		   The square is chosen randomly.
 		 */
-		void hint() {
-            if (solved()) {
-                return;
-            }
-            
+		void hint() noexcept {
             // Loop until a square that is incorrect is found.
             for (
                 // The first square to be checked is chosen at random.
                 int index = generator.get_int(0, BOARD_SIZE * BOARD_SIZE - 1);;
-                index = (index + 1) % (BOARD_SIZE * BOARD_SIZE - 1)
+                index = (index + 1) % (BOARD_SIZE * BOARD_SIZE)
             ) {
                 int i = index / BOARD_SIZE;
                 int j = index % BOARD_SIZE;
@@ -524,12 +387,8 @@ class Board {
 		
 		/* Solves the entire puzzle.
 		 */
-		void solve() {
-			for (int i = 0; i < BOARD_SIZE; ++i) {
-				for (int j = 0 ; j < BOARD_SIZE; ++j) {
-					board[i][j] = target[i][j];
-				}
-			}
+		void solve() noexcept {
+			board = target;
 		}
 		
         /* Sets the size of this object's sprites according to the size of the given sprite.
@@ -564,6 +423,57 @@ class Board {
         }
         
 	private:
+        /* Returns true if the player's board matches the hints.
+           Sets the solution to the player's board if true.
+         */
+        bool valid() noexcept {
+            // The board hints are initialised.
+            std::array<std::array<int, MAX_HINT>, BOARD_SIZE> board_rows({});
+            std::array<std::array<int, MAX_HINT>, BOARD_SIZE> board_columns({});
+            
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				int position = MAX_HINT - 1;
+				
+				for (int j = BOARD_SIZE - 1; j >= 0; --j) {
+					if (board[i][j] == FILLED) {
+						++board_rows[i][position];
+					}
+					
+					else if (board_rows[i][position]) {
+						--position;
+					}
+				}
+			}
+            
+			for (int i = 0; i < BOARD_SIZE; ++i) {
+				int position = MAX_HINT - 1;
+				
+				for (int j = BOARD_SIZE - 1; j >= 0; --j) {
+					if (board[j][i] == FILLED) {
+						++board_columns[i][position];
+					}
+					
+					else if (board_columns[i][position]) {
+						--position;
+					}
+				}
+			}
+            
+            // Compare target hints with board hints.
+            if (board_rows != rows || board_columns != columns) {
+                return false;
+            }
+            
+            // Valid solution to ambiguous hints - set solution to this.
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+				for (int j = 0 ; j < BOARD_SIZE; ++j) {
+					target[i][j] = board[i][j] == FILLED ? FILLED : EMPTY;
+				}
+			}
+            
+            return true;
+        }
+        
 		std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> target; // The pattern to be found.
 		std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> board; // The current pattern.
 		std::array<std::array<int, MAX_HINT>, BOARD_SIZE> rows; // The row hints.
@@ -592,21 +502,21 @@ class Clock {
 	public:
 		/* Initialises the sprites for the numbers and the colon.
 		 */
-		Clock(const Sprite& sprite) {
+		Clock(const Sprite& sprite) noexcept {
 			resize(sprite);
             start();
 		}
 		
 		/* Starts the timer
 		 */
-		void start() {
+		void start() noexcept {
 			start_ = Timer::time();
 			now = -1;
 		}
 		
 		/* Blits the timer to the given sprite.
 		 */
-		void blit_to(Sprite& sprite) {
+		void blit_to(Sprite& sprite) const noexcept {
 			// The time is split into minutes and seconds
 			int minutes = now / 60;
 			int seconds = now % 60;
@@ -632,7 +542,7 @@ class Clock {
 		/* Updates the current time.
 		   Returns true if the time changed.
 		 */
-		bool update() {
+		bool update() noexcept {
 			// The time elapsed since the start is obtained
 			int now_ = Timer::time() - start_;
 			
@@ -849,8 +759,12 @@ bool game(Display& display, Button& background) noexcept {
                         
                         // Else, if solve was clicked, the solution is displayed.
                         else if (solve_clicked && solve.get_rectangle().contains(event.click_position())) {
+                            while (!board.solved()) {
+                                board.hint();
+                                ++hint_counter;
+                            }
+                            
                             board.solve();
-                            hint_counter.max();
                             round_end = true;
                         }
                         
@@ -1023,138 +937,6 @@ bool game(Display& display, Button& background) noexcept {
             }
         }
 		
-        #ifdef PICROSS_2_V1
-		// Puzzle solving loop
-		while (!new_puzzle && !reset_puzzle && !board.solved()) {
-			// Music is requeued if necessary
-			music_queuer->requeue();
-			
-			// The mouse is checked for a click
-			if (SDL_GetMouseState(NULL, NULL) & LEFT_CLICK) {
-				// The game waits for the mouse to be released
-				while (SDL_GetMouseState(&mouse.x, &mouse.y) & LEFT_CLICK) {
-					SDL_PumpEvents();
-				}
-				
-				// If the player chose to quit, they are returned to the main menu
-				if (quit.in_rect(&mouse)) {
-					return;
-				}
-				
-				// Else, if the player requested a hint, a square is filled in
-				else if (hint.in_rect(&mouse)) {
-					board.hint();
-					++hint_counter;
-				}
-				
-				// Else, if the player requested the solution, the solution is displayed
-				else if (solve.in_rect(&mouse)) {
-					board.solve();
-					hint_counter.max();
-				}
-				
-				// Else, if the player requested a new puzzle, a new puzzle is generated
-				else if (new_.in_rect(&mouse)) {
-					new_puzzle = true;
-				}
-				
-				// Else, if the players requested for a reset, the puzzle is reset
-				else if (reset.in_rect(&mouse)) {
-					reset_puzzle = true;
-				}
-				
-				// Else, the click is checked for whether it is on the board or not
-				else {
-					board.click_check(&mouse, true);
-				}
-				
-				// The display is updated after a click.
-				background->blit(display->get_surface());
-				board.blit_board(display->get_surface());
-				timer.blit(display->get_surface());
-				hint_counter.blit(display->get_surface());
-				hint.blit(display->get_surface());
-				solve.blit(display->get_surface());
-				quit.blit(display->get_surface());
-				new_.blit(display->get_surface());
-				reset.blit(display->get_surface());
-				hints.blit(display->get_surface());
-				time_.blit(display->get_surface());
-				display->update();
-			}
-			
-			// The right click is also checked
-			else if (SDL_GetMouseState(NULL, NULL) & RIGHT_CLICK) {
-				// The game waits for the mouse to be released
-				while (SDL_GetMouseState(&mouse.x, &mouse.y) & RIGHT_CLICK) {
-					SDL_PumpEvents();
-				}
-				
-				// The click is checked for whether it is on the board or not
-				board.click_check(&mouse, false);
-				
-				// The display is updated after a click.
-				background->blit(display->get_surface());
-				board.blit_board(display->get_surface());
-				timer.blit(display->get_surface());
-				hint_counter.blit(display->get_surface());
-				hint.blit(display->get_surface());
-				solve.blit(display->get_surface());
-				quit.blit(display->get_surface());
-				new_.blit(display->get_surface());
-				reset.blit(display->get_surface());
-				hints.blit(display->get_surface());
-				time_.blit(display->get_surface());
-				display->update();
-			}
-		}
-		
-		// If the board was solved, the target is displayed (no marks)
-		if (board.solved()) {
-			board.blit_target(display->get_surface());
-			display->update();
-		}
-		
-		while (!new_puzzle && !reset_puzzle) {
-			// The mouse is checked for a click
-			if (SDL_GetMouseState(NULL, NULL) & LEFT_CLICK) {
-				// The game waits for the mouse to be released
-				while (SDL_GetMouseState(&mouse.x, &mouse.y) & LEFT_CLICK) {
-					SDL_PumpEvents();
-				}
-				
-				// The function returns if the player quits
-				if (quit.in_rect(&mouse)) {
-					return;
-				}
-				
-				// A new puzzle will be generated
-				else if (new_.in_rect(&mouse)) {
-					new_puzzle = true;
-				}
-				
-				// The puzzle will be reset
-				else if (reset.in_rect(&mouse)) {
-					reset_puzzle = true;
-				}
-			}
-			
-			// The music is requeued when necessary
-			music_queuer->requeue();
-			
-			// Events are updated
-			SDL_PumpEvents();
-		}
-		
-		if (new_puzzle) {
-			board.new_puzzle();
-		}
-		
-		else {
-			board.reset_puzzle();
-		}
-        #endif
-        
         // The timer and hint counter are reset.
 		timer.start();
 		hint_counter.reset();
@@ -1365,6 +1147,10 @@ int main(int argc, char** argv) {
 }
 
 /* CHANGELOG:
+     v2.1:
+       Allow multiple solutions for ambiguous hints.
+       Solve only increments the hint count for the number of incorrect squares.
+       Loop the hint index correctly.
      v2.0.0.2:
        Use Event::poll() instead of Event::wait() for performance.
      v2.0.0.1:
