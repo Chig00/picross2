@@ -1,4 +1,4 @@
-# picross2
+# Picross 2
 
 A 9x9 randomly generated picross game.
 
