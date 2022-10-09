@@ -4,7 +4,7 @@
 // Constants
 //{
 // The current version of the program.
-constexpr int VERSION[System::VERSION_LENGTH] = {2, 1, 0, 0};
+constexpr int VERSION[System::VERSION_LENGTH] = {2, 1, 1, 0};
 
 // Window title
 constexpr const char* TITLE = "Picross 2 by Chigozie Agomo";
@@ -219,6 +219,7 @@ class Board {
 		/* Blits the board to the given sprite.
 		 */
 		void blit_board(Sprite& sprite) const noexcept {
+            // Blit squares.
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < BOARD_SIZE; ++j) {
 					switch (board[i][j]) {
@@ -248,6 +249,7 @@ class Board {
 				}
 			}
 			
+            // Blit row hints.
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < MAX_HINT; ++j) {
 					sprite.blit(
@@ -258,6 +260,7 @@ class Board {
 				}
 			}
 			
+            // Blit column hints.
 			for (int i = 0; i < BOARD_SIZE; ++i) {
 				for (int j = 0; j < MAX_HINT; ++j) {
 					sprite.blit(
@@ -491,7 +494,7 @@ class Board {
 		int x; // x co-ordinate of the board's left edge.
 		int y; // y co-ordinate of the board's right edge.
 		int width; // Width of a board square.
-		int height; // Hieght of a board square.
+		int height; // Height of a board square.
         int x_index = -1; // The index of the last clicked column.
         int y_index = -1; // The index of the last clicked row.
 };
@@ -1147,6 +1150,8 @@ int main(int argc, char** argv) {
 }
 
 /* CHANGELOG:
+     v2.1.1:
+       Make grid lines thicker to handle width rounding.
      v2.1:
        Allow multiple solutions for ambiguous hints.
        Solve only increments the hint count for the number of incorrect squares.
